@@ -27,6 +27,7 @@ export default function ClientLayout({ children }: {
                 method: "DELETE",
             })
                 .then((data) => {
+                    setLoginMember(null);
                     alert(data.msg);
                 })
                 .catch((rsData) => {
