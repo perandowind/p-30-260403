@@ -1,7 +1,9 @@
 "use client";
 
+import { AuthContext } from "@/app/clientLayout";
 import { fetchApi } from "@/lib/client";
 import { useRouter } from "next/navigation";
+import { use } from "react";
 
 export default function Login() {
 
@@ -34,8 +36,7 @@ export default function Login() {
             })
         })
             .then(rs => {
-                alert(rs.msg)
-                // 루트 페이지로 이동
+                alert(rs.msg);
                 router.replace(`/`)
             })
             .catch(errMsg => {
