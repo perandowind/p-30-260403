@@ -1,27 +1,26 @@
 'use client';
-import { fetchApi } from "@/lib/client";
+import { fetchApi, FetchCallbacks } from "@/lib/client";
 import { MemberDto } from "@/type/member";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function ClientLayout({ children }: {
-    children: React.ReactNode;
-}) {
+function useAuth() {
 
     const [loginMember, setLoginMember] = useState<MemberDto | null>(null);
-    const isLogin = loginMember !== null;
 
-    useEffect(() => {
+    const getLoginMember = (callbacks: FetchCallbacks) => {
         fetchApi("/api/v1/members/me")
-          .then((memberDto) => {
-            setLoginMember(memberDto);
-          })
-          .catch((err) => {
-            console.log("err", err);
-          });
-      }, []);
+            .then((memberDto) => {
+                setLoginMember(memberDto);
+                callbacks.onSuccess?.(memberDto);
+            })
+            .catch((err) => {
+                callbacks.onError?.(err);
+            });
+    }
 
-    const logout = () => {
+    const logout = (callbacks: FetchCallbacks) => {
         confirm("로그아웃 하시겠습니까?") &&
             fetchApi("/api/v1/members/logout", {
                 method: "DELETE",
@@ -29,10 +28,46 @@ export default function ClientLayout({ children }: {
                 .then((data) => {
                     setLoginMember(null);
                     alert(data.msg);
+                    callbacks.onSuccess?.(data);
                 })
                 .catch((rsData) => {
                     alert(rsData.msg);
+                    callbacks.onError?.(rsData.msg);
                 });
+    };
+
+    return { loginMember, getLoginMember, logout };
+}
+
+export default function ClientLayout({ children }: {
+    children: React.ReactNode;
+}) {
+
+    const { loginMember, getLoginMember, logout: _logout } = useAuth();
+    const isLogin = loginMember !== null;
+    const router = useRouter();
+
+    useEffect(() => {
+        getLoginMember({
+            onSuccess: (data) => {
+                console.log("data", data);
+            },
+            onError: (err) => {
+                console.log("err", err);
+            },
+        });
+    }, []);
+
+    const logout = () => {
+        _logout({
+            onSuccess: (data) => {
+                alert(data.msg);
+                router.replace("/");
+            },
+            onError: (rsData) => {
+                alert(rsData.msg);
+            },
+        });
     };
 
     return (
@@ -42,8 +77,7 @@ export default function ClientLayout({ children }: {
                     <Link href="/">메인</Link>
                     <Link href="/posts">목록</Link>
                     {!isLogin && <Link href="/member/login">로그인</Link>}
-                    {isLogin && <button className="hover:cursor-pointer"
-                     onClick={logout}>로그아웃</button>}
+                    {isLogin && <button onClick={logout}>로그아웃</button>}
                     {isLogin && <Link href="#">{loginMember?.name}</Link>}
                 </nav>
             </header>
@@ -52,5 +86,5 @@ export default function ClientLayout({ children }: {
             </main>
             <footer>푸터</footer>
         </>
-    );
+    )
 }
