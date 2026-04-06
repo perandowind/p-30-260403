@@ -83,7 +83,10 @@ public class ApiV1MemberController {
     @DeleteMapping("/logout")
     public RsData<Void> logout() {
 
+        // 인증된 회원정보 조회 후 로그아웃 처리
+
         rq.deleteCookie("apiKey");
+        rq.deleteCookie("accessToken");
 
         return new RsData(
                 "로그아웃 되었습니다.",
