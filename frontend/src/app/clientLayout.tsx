@@ -1,5 +1,5 @@
 'use client';
-import { fetchApi, FetchCallbacks } from "@/lib/client";
+import { fetchApi } from "@/lib/client";
 import { MemberDto } from "@/type/member";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,18 +11,16 @@ function useAuth() {
 
     const [loginMember, setLoginMember] = useState<MemberDto | null>(null);
 
-    const getLoginMember = (callbacks: FetchCallbacks) => {
+    const getLoginMember = () => {
         fetchApi("/api/v1/members/me")
             .then((memberDto) => {
                 setLoginMember(memberDto);
-                callbacks.onSuccess?.(memberDto);
             })
             .catch((err) => {
-                callbacks.onError?.(err);
             });
     }
 
-    const logout = (callbacks: FetchCallbacks) => {
+    const logout = () => {
         confirm("로그아웃 하시겠습니까?") &&
             fetchApi("/api/v1/members/logout", {
                 method: "DELETE",
@@ -30,11 +28,9 @@ function useAuth() {
                 .then((data) => {
                     setLoginMember(null);
                     alert(data.msg);
-                    callbacks.onSuccess?.(data);
                 })
                 .catch((rsData) => {
                     alert(rsData.msg);
-                    callbacks.onError?.(rsData.msg);
                 });
     };
 
@@ -46,32 +42,13 @@ export default function ClientLayout({ children }: {
 }) {
 
     const authState = useAuth();
-    const { loginMember, getLoginMember, logout: _logout } = useAuth();
+    const { loginMember, getLoginMember, logout } = useAuth();
     const isLogin = loginMember !== null;
     const router = useRouter();
 
     useEffect(() => {
-        getLoginMember({
-            onSuccess: (data) => {
-                console.log("data", data);
-            },
-            onError: (err) => {
-                console.log("err", err);
-            },
-        });
+        getLoginMember();
     }, []);
-
-    const logout = () => {
-        _logout({
-            onSuccess: (data) => {
-                alert(data.msg);
-                router.replace("/");
-            },
-            onError: (rsData) => {
-                alert(rsData.msg);
-            },
-        });
-    };
 
     return (
         <>
